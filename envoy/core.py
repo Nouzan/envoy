@@ -25,7 +25,8 @@ def _terminate_process(process):
     if sys.platform == 'win32':
         import ctypes
         PROCESS_TERMINATE = 1
-        handle = ctypes.windll.kernel32.OpenProcess(PROCESS_TERMINATE, False, process.pid)
+        handle = ctypes.windll.kernel32.OpenProcess(
+            PROCESS_TERMINATE, False, process.pid)
         ctypes.windll.kernel32.TerminateProcess(handle, -1)
         ctypes.windll.kernel32.CloseHandle(handle)
     else:
@@ -47,6 +48,7 @@ def _is_alive(thread):
 
 
 class Command(object):
+
     def __init__(self, cmd):
         self.cmd = cmd
         self.process = None
@@ -65,25 +67,24 @@ class Command(object):
 
             try:
                 self.process = subprocess.Popen(self.cmd,
-                    universal_newlines=True,
-                    shell=False,
-                    env=environ,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    bufsize=0,
-                    cwd=cwd,
-                )
+                                                universal_newlines=True,
+                                                shell=False,
+                                                env=environ,
+                                                stdin=subprocess.PIPE,
+                                                stdout=subprocess.PIPE,
+                                                stderr=subprocess.PIPE,
+                                                bufsize=0,
+                                                cwd=cwd,
+                                                )
 
                 if sys.version_info[0] >= 3:
                     self.out, self.err = self.process.communicate(
-                        input = bytes(self.data, "UTF-8") if self.data else None
+                        input=bytes(self.data, "UTF-8") if self.data else None
                     )
                 else:
                     self.out, self.err = self.process.communicate(self.data)
             except Exception as exc:
                 self.exc = exc
-
 
         thread = threading.Thread(target=target)
         thread.start()
@@ -91,7 +92,7 @@ class Command(object):
         thread.join(timeout)
         if self.exc:
             raise self.exc
-        if _is_alive(thread) :
+        if _is_alive(thread):
             _terminate_process(self.process)
             thread.join(kill_timeout)
             if _is_alive(thread):
@@ -102,11 +103,12 @@ class Command(object):
 
 
 class ConnectedCommand(object):
+
     def __init__(self,
-        process=None,
-        std_in=None,
-        std_out=None,
-        std_err=None):
+                 process=None,
+                 std_in=None,
+                 std_out=None,
+                 std_err=None):
 
         self._process = process
         self.std_in = std_in
@@ -143,12 +145,11 @@ class ConnectedCommand(object):
 
     def send(self, str, end='\n'):
         """Sends a line to std_in."""
-        return self._process.stdin.write(str+end)
+        return self._process.stdin.write(str + end)
 
     def block(self):
         """Blocks until command finishes. Returns Response instance."""
         self._status_code = self._process.wait()
-
 
 
 class Response(object):
@@ -163,7 +164,6 @@ class Response(object):
         self.std_out = None
         self.status_code = None
         self.history = []
-
 
     def __repr__(self):
         if len(self.command):
@@ -194,7 +194,8 @@ def expand_args(command):
     return command
 
 
-def run(command, data=None, timeout=None, kill_timeout=None, env=None, cwd=None):
+def run(command, data=None, timeout=None, kill_timeout=None,
+        env=None, cwd=None):
     """Executes a given commmand and returns Response.
 
     Blocks until process is complete, or timeout is reached.
@@ -207,7 +208,7 @@ def run(command, data=None, timeout=None, kill_timeout=None, env=None, cwd=None)
 
         if len(history):
             # due to broken pipe problems pass only first 10 KiB
-            data = history[-1].std_out[0:10*1024]
+            data = history[-1].std_out[0:10 * 1024]
 
         cmd = Command(c)
         try:
@@ -241,14 +242,14 @@ def connect(command, data=None, env=None, cwd=None):
     environ.update(env or {})
 
     process = subprocess.Popen(command_str,
-        universal_newlines=True,
-        shell=False,
-        env=environ,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        bufsize=0,
-        cwd=cwd,
-    )
+                               universal_newlines=True,
+                               shell=False,
+                               env=environ,
+                               stdin=subprocess.PIPE,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               bufsize=0,
+                               cwd=cwd,
+                               )
 
     return ConnectedCommand(process=process)

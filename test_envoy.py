@@ -54,5 +54,6 @@ class ConnectedCommandTests(unittest.TestCase):
         self.assertEqual(r.std_out, test_string.upper())
         self.assertEqual(r.status_code, 0)
 
+
 if __name__ == "__main__":
     unittest.main()
